@@ -18,14 +18,7 @@ function jsxFunction (path, state, functionName) {
                 nodeList.push(createRenderJsx(lineNode, ONE_NODE, null, functionName)[0]);
             }
             else {
-                // if (type.isJSXExpressionContainer(lineNode)) {
-                //     console.log(lineNode)
-                //     const { expression } = lineNode;
-                //     nodeList.push(type.stringLiteral(`{${expression.value}}`), 1);
-                // }
-                // else {
-                    nodeList.push(lineNode);
-                // }
+                nodeList.push(lineNode);
             }
         }
         else {
@@ -94,7 +87,10 @@ const JSXPlugins = (babel) => {
 
                     const attributes = openingElement.attributes.map((attr) => {
                         const name = attr.name.name;
-                        const value = attr.value;
+                        let value = attr.value;
+                        if (type.isObjectExpression(value?.expression)) {
+                            value = value?.expression
+                        }
                         return type.objectProperty(type.identifier(name), value);
                     });
 
@@ -114,9 +110,11 @@ const JSXPlugins = (babel) => {
             JSXExpressionContainer: {
                 exit (path) {
                     const { expression } = path.node;
-                    path.replaceWith(
-                        type.stringLiteral(`{${expression.value}}`)
-                    )
+                    if (!type.isObjectExpression(expression)) {
+                        path.replaceWith(
+                            type.stringLiteral(`${expression.value}`)
+                        )
+                    }
                 }
             }
         }
